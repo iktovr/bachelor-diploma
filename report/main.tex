@@ -1,0 +1,72 @@
+\documentclass{diploma}
+
+\usepackage{todonotes}
+\reversemarginpar
+
+\usepackage{siunitx}
+
+\def\normalspacing{\setlength{\jot}{3pt}}
+
+\student{Бирюков Виктор Владимирович}
+\group{М8О-407Б-19}
+\theme{Разреженная идентификация нелинейных динамических систем}
+
+\supervisor{Ревизников Дмитрий Леонидович}
+\firstConsultant{---}
+\secondConsultant{---}
+\reviewer{---}
+
+\faculty{№ 8 <<Компьютерные науки и прикладная математика>>}
+\department{806}
+\speciality{01.03.02 <<Прикладная математика и информатика>>}
+\profile{Информатика}
+
+\departmentFullName{№ 806}
+\headOfDepartment{Крылов Сергей Сергеевич}
+\date{\uline{\hspace{24pt}} мая \the\year\ года}
+
+\input{contents/glossary}
+\input{contents/terms}
+
+\addbibresource{main.bib}
+
+\graphicspath{ {./img/} }
+
+% Иллюстрации всегда по центру
+\makeatletter
+\g@addto@macro\@floatboxreset\centering
+\makeatother
+
+\begin{document}
+    \maketitle
+
+    % \includepdf[pages=-]{extra/task}
+    \setcounter{page}{2} % Устанавливает счётчик страниц
+
+    \include{contents/0-abstract}
+
+    \tableofcontents
+    \termsandabbreviations
+
+    \include{contents/1-introduction}
+
+    \include{contents/2-task}
+
+    \input{contents/3-1-1-sindy}
+    \input{contents/3-1-2-regression}
+    \input{contents/3-1-3-differentiation}
+    \input{contents/3-2-tech}
+    \input{contents/3-3-practice}
+
+    \input{contents/4-1-regression}
+    \input{contents/4-2-differentiation}
+    \input{contents/4-3-sindy}
+    \input{contents/4-4-perspectives}
+    
+    \include{contents/5-conclusion}
+
+    \printbibliography
+
+    \appendix
+    \include{contents/6-appendix-src}
+\end{document}

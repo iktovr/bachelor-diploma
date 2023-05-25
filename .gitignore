@@ -270,6 +270,7 @@ acs-*.bib
 *.acr
 *.glg
 *.glo
+*.glo-abr
 *.gls
 *.glsdefs
 *.lzo
