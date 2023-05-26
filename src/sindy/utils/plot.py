@@ -5,8 +5,9 @@ import seaborn as sns
 import numpy as np
 from scipy.integrate import solve_ivp
 from sklearn.metrics import max_error, mean_squared_error, mean_absolute_error, r2_score
-from sklearn.pipeline import Pipeline
 from IPython.display import clear_output
+from sklearn.exceptions import ConvergenceWarning
+from sklearn.utils._testing import ignore_warnings
 
 from ._utils import Equation, GaussianNoise, get_true_coef, gen_data
 from .metrics import iou_score, me_score
@@ -49,12 +50,7 @@ def plot_data(data, t, *, ax=None, xlim=None, ylim=None, zlim=None, azim=None, f
 
 
 # sindy
-def plot_error_over_time_noise(data, t, u0, s, noise_values, arguments, *, metric=mean_squared_error, ax=None):    
-    assert(len(arguments) == len(noise_values))
-
-    model = Pipeline([('noise', GaussianNoise()), ('sindy', s)])
-    coefs = []
-    
+def plot_error_over_time_noise(data, t, u0, coefs, feature_library, noise_values, *, metric=mean_squared_error, ax=None):
     standalone = ax is None
     if standalone:
         fig = plt.figure()
@@ -62,13 +58,8 @@ def plot_error_over_time_noise(data, t, u0, s, noise_values, arguments, *, metri
         
     ax.set(yscale='log', xlabel='t', ylabel='error')
     
-    for noise, args in zip(noise_values, arguments):
-        model.set_params(noise__scale=noise)
-        model[1].set_params(**args)
-        model.fit(data, t)
-        coefs.append(np.copy(model[1].coef_))
-        
-        eq = model[1].get_equation()
+    for coef, noise in zip(coefs, noise_values):        
+        eq = Equation(feature_library, coef)
         res = solve_ivp(eq, (t[0], t[-1]), u0, t_eval=t)
         pred = np.stack(res.y, axis=-1)
         
@@ -80,8 +71,6 @@ def plot_error_over_time_noise(data, t, u0, s, noise_values, arguments, *, metri
     
     if standalone:
         plt.show()
-
-    return coefs
 
 
 def plot_iou_over_noise(coefs, feature_library, terms, noise_values, *, input_feature_names='x', threshold=1e-8, ax=None):
@@ -124,7 +113,7 @@ def plot_missing_extra_terms_over_noise(coefs, feature_library, terms, noise_val
         
     ax.plot(noise_values, missing, label='missing terms', marker='.')
     trans_offset = matplotlib.transforms.offset_copy(ax.transData, y=5, units='dots')
-    ax.plot(noise_values, extra, label='extra_terms', transform=trans_offset, marker='.')
+    ax.plot(noise_values, extra, label='extra terms', transform=trans_offset, marker='.')
     ax.set_ylim(-0.25, max(np.max(missing), np.max(extra))+0.25)
     ax.legend(loc='upper left')
     
@@ -132,7 +121,7 @@ def plot_missing_extra_terms_over_noise(coefs, feature_library, terms, noise_val
         plt.show()
 
 
-def plot_results(data, t, u0, terms, models, noise_values, arguments, size=(3.5, 2.5)):
+def plot_results(data, t, u0, terms, models, noise_values, arguments, *, size=(3.5, 2.5), return_coefs=False, verbose=False, **plot_data_kwargs):
     assert(len(models) == len(arguments))
     for args in arguments:
         assert(len(args) == 0 or len(args) == len(noise_values))
@@ -147,13 +136,16 @@ def plot_results(data, t, u0, terms, models, noise_values, arguments, size=(3.5,
     subplot_args = dict()
     if data.shape[1] == 3:
         subplot_args['projection'] = '3d'
+
+    if return_coefs:
+        coefs = [[] for _ in range(len(models))]
     
     rng = np.random.default_rng()
     for i, noise in enumerate(noise_values):
         noise_data = data + rng.normal(scale=noise, size=data.shape)
         ax = fig.add_subplot(gs[0, i+1], **subplot_args)
         ax.set_title(f'Noise: {noise:.2g}')
-        plot_data(noise_data, t, ax=ax)
+        plot_data(noise_data, t, ax=ax, **plot_data_kwargs)
         
         for j, ((name, model), args) in enumerate(zip(models.items(), arguments), 1):
             if i == 0:
@@ -167,13 +159,46 @@ def plot_results(data, t, u0, terms, models, noise_values, arguments, size=(3.5,
             coef = model.optimizer.coef_
             iou = iou_score(true_coef, coef)
 
+            if return_coefs:
+                coefs[j-1].append(coef)
+
             equation = model.get_equation()
             pred, _ = gen_data(equation, t, u0=u0)
             
             ax = fig.add_subplot(gs[j, i+1], **subplot_args)
             ax.set_title(f'IoU: {iou:.2g}')
-            plot_data(pred, t, ax=ax)
+            plot_data(pred, t, ax=ax, **plot_data_kwargs)
         
+        if verbose:
+            print(f'Noise value {i+1}/{len(noise_values)} ({noise}): Done')
+    if verbose:
+        clear_output()
+        
+    fig.tight_layout()
+    plt.show()
+
+    if return_coefs:
+        return coefs
+
+
+def plot_sindy_scores(terms, coefs, feature_library, noise_values, *, input_feature_names='x', threshold=1e-8):
+    fig = plt.figure(figsize=(14, 4))
+    axes = fig.subplots(1, 2)
+
+    plot_missing_extra_terms_over_noise(coefs, feature_library, terms, noise_values, input_feature_names=input_feature_names, threshold=threshold, ax=axes[0])
+    plot_iou_over_noise(coefs, feature_library, terms, noise_values, input_feature_names=input_feature_names, threshold=threshold, ax=axes[1])
+    
+    fig.subplots_adjust(wspace=0.15)
+    plt.show()
+
+
+def plot_sindy_scores_all(data, t, u0, terms, coefs, feature_library, noise_values, *, input_feature_names='x', metric=mean_squared_error, threshold=1e-8):
+    fig = plt.figure(figsize=(11, 6))
+    
+    plot_error_over_time_noise(data, t, u0, coefs, feature_library, noise_values, metric=metric, ax=fig.add_subplot(2, 2, (1, 2)))
+    plot_missing_extra_terms_over_noise(coefs, feature_library, terms, noise_values, input_feature_names=input_feature_names, threshold=threshold, ax=fig.add_subplot(2, 2, 3))
+    plot_iou_over_noise(coefs, feature_library, terms, noise_values, input_feature_names=input_feature_names, threshold=threshold, ax=fig.add_subplot(2, 2, 4))
+    
     fig.tight_layout()
     plt.show()
 
@@ -218,6 +243,88 @@ def plot_coef(model, *, shape=(10, 10), ax=None, figsize=(5, 5), cbar_ax=None):
     sns.heatmap(coef.reshape(shape), cmap='seismic', center=0, square=True, linewidth=0.5, linecolor='lightgray', 
                 xticklabels=0, yticklabels=0, cbar_ax=cbar_ax, ax=ax)
     # ax.set_title('Coefficients')
+    if standalone:
+        plt.show()
+
+    
+def plot_iou_over_regression_parameter(data, t, terms, model, name, values, noise_value=0):
+    noise_data = GaussianNoise(scale=noise_value).transform(data)
+    deriv = model.differentiator.transform(noise_data, t)
+    true_coef = get_true_coef(terms, model.feature_library)
+    iou = []
+    for value in values:
+        model.optimizer.set_params(**{name: value})
+        with ignore_warnings(category=ConvergenceWarning):
+            model.fit(noise_data, t, target=deriv)
+        iou.append(iou_score(true_coef, model.coef_))
+    ax = plt.gca()
+    ax.set(ylabel='IoU', xlabel=name, title=f'noise: {noise_value}')
+    ax.plot(values, iou)
+    plt.show()
+
+def plot_iou_over_two_regression_parameters(data, t, terms, model, name1, values1, name2, values2, noise_value=0, **heatmap_kwargs):
+    noise_data = GaussianNoise(scale=noise_value).transform(data)
+    deriv = model.differentiator.transform(noise_data, t)
+    true_coef = get_true_coef(terms, model.feature_library)
+    iou = np.zeros((len(values2), len(values1)))
+    for i, value1 in enumerate(values1):
+        for j, value2 in enumerate(values2):
+            model.optimizer.set_params(**{name1: value1, name2: value2})
+            with ignore_warnings(category=ConvergenceWarning):
+                model.fit(noise_data, t, target=deriv)
+            iou[i, j] = iou_score(true_coef, model.coef_)
+    ax = plt.gca()
+    xticklabels=[values1[0]] + ['' for i in range(len(values1)-2)] + [values1[-1]]
+    yticklabels=[values2[0]] + ['' for i in range(len(values2)-2)] + [values2[-1]]
+    ax = sns.heatmap(iou, annot=False, xticklabels=xticklabels, yticklabels=yticklabels, cmap='Reds', linewidth=0, ax=ax, **heatmap_kwargs)
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+    plt.setp(ax.get_yticklabels(), rotation=0, ha="right", rotation_mode="anchor")
+    ax.set(xlabel=name1, ylabel=name2, title=f'noise: {noise_value}')
+    plt.show()
+    return iou
+
+def plot_iou_over_noise_arg(data, t, terms, model, name, values, noise_values, args, *, size=None, ax=None, verbose=False, **heatmax_kwargs):
+    true_coef = get_true_coef(terms, model.feature_library)
+    iou = np.zeros((len(noise_values), len(values)))
+    for i, (noise, params) in zip(range(len(noise_values)-1, -1, -1), zip(noise_values, args)):
+        model.set_params(**params)
+        noise_data = GaussianNoise(scale=noise).transform(data)
+        deriv = model.differentiator.transform(noise_data, t)
+        for j, value in enumerate(values):
+            model.optimizer.set_params(**{name: value})
+            with ignore_warnings(category=ConvergenceWarning):
+                model.fit(noise_data, t, target=deriv)
+            iou[i, j] = iou_score(true_coef, model.coef_)
+        
+        if verbose:
+            print(f'Noise value {len(noise_values)-i}/{len(noise_values)} ({noise}): Done')
+    if verbose:
+        clear_output()
+    
+    standalone = ax is None
+    if standalone:
+        fig = plt.figure(figsize=size)
+        ax = fig.gca()
+
+    xticklabels=[values[0]] + ['' for i in range(len(values)-2)] + [values[-1]]
+    ax = sns.heatmap(iou, annot=False, xticklabels=xticklabels, yticklabels=noise_values[::-1], cmap='Reds', ax=ax, **heatmax_kwargs)
+    plt.setp(ax.get_yticklabels(), rotation=0, ha="right", rotation_mode="anchor")
+    ax.set(xlabel=name, ylabel='noise')
+
+    lowest = iou.argmax(1)
+    highest = np.zeros_like(lowest)
+    for i in range(len(iou)):
+        for j in range(lowest[i]+1, len(iou[i])):
+            if np.abs(iou[i][j] - iou[i][lowest[i]]) > 1e-5:
+                highest[i] = j - 1
+                break
+        else:
+            highest[i] = len(iou[i]) - 1
+
+    ax.plot(lowest + 0.5, np.arange(len(noise_values)) + 0.5, linewidth=1.5, color='lightgray', linestyle='--')
+    ax.plot(highest + 0.5, np.arange(len(noise_values)) + 0.5, linewidth=1.5, color='lightgray', linestyle='--')
+    print(list(zip(values[lowest][::-1], values[highest][::-1])))
+
     if standalone:
         plt.show()
 

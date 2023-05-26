@@ -20,16 +20,18 @@ class SINDy(BaseEstimator):
         else:
             assert(len(feature_names) == data.shape[1])
             self.feature_names_ = feature_names
-        self.rhs_names_ = self.feature_library.get_feature_names_out(self.feature_names_)
-        self.lhs_names_ = self.differentiator.get_feature_names_out(self.feature_names_) if target is None else \
-            ['d' + i for i in self.feature_names_]
 
         features = self.feature_library.fit_transform(data)
         if target is None:
             target = self.differentiator.fit_transform(data, t)
         self.optimizer.fit(features, target)
 
+        self.rhs_names_ = self.feature_library.get_feature_names_out(self.feature_names_)
+        self.lhs_names_ = self.differentiator.get_feature_names_out(self.feature_names_) if target is None else \
+            ['d' + i for i in self.feature_names_]
         self.coef_ = self.optimizer.coef_
+
+        return self
 
     def predict(self, data):
         check_is_fitted(self)
@@ -40,11 +42,12 @@ class SINDy(BaseEstimator):
         check_is_fitted(self)
         return Equation(self.feature_library, self.optimizer.coef_)
 
-    def print_equation(self, threshold=1e-8):
+    def print_equation(self, *, fmt='.2g', threshold=1e-8):
         check_is_fitted(self)
         res = ''
+        fmt_string = '{' + f':{fmt}' + '}'
         for i, l in enumerate(self.lhs_names_):
-            res += f"{l} = {' + '.join([f'{self.coef_[i][j]:.2f} * {self.rhs_names_[j]}' for j, a in enumerate(np.abs(self.coef_[i]) > threshold) if a])}\n"
+            res += f"{l} = {' + '.join([f'{fmt_string.format(self.coef_[i][j])} * {self.rhs_names_[j]}' for j, a in enumerate(np.abs(self.coef_[i]) > threshold) if a])}\n"
         return res
 
     def set_params(self, **params):
@@ -65,6 +68,7 @@ class SINDy(BaseEstimator):
         self.optimizer.set_params(**optim_params)
         self.differentiator.set_params(**dif_params)
         self.feature_library.set_params(**lib_params)
+        return self
 
     def get_params(self, deep=False):
         params = dict()

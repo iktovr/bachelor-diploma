@@ -10,14 +10,7 @@ def linear(t, u, a=-0.1, b=2, c=-2, d=-0.1):
         c * x1 + d * x2
     ]
 linear.u0 = (0.1, 0.1)
-
-
-def hopf_normal_form(t, u, mu, w, A):
-    x1, x2 = u
-    return [
-        mu * x1 + w * x2 + A * (x1 ** 2 + x2 ** 2),
-        -w * x1 + mu * x2 + A * (x1 ** 2 + x2 ** 2)
-    ]
+linear.terms = (('x1', 'x2'), ('x1', 'x2'))
 
 
 # не автономная
@@ -32,6 +25,18 @@ van_der_pol.u0 = (0.1, 0.1)
 
 # 3D
 
+
+def qubic(t, u, a=-1, b=20, c=-20, d=-1, e=-1):
+    x1, x2, x3 = u
+    return [
+        a * x1**3 + b * x2**3,
+        c * x1**3 + d * x2**3,
+        e * x3**3
+    ]
+qubic.u0 = (1, 1, 1)
+qubic.terms = (('x1^3', 'x2^3'), ('x1^3', 'x2^3'), ('x3^3',))
+
+
 def lorenz_attractor(t, u, s=10, r=28, b=8/3):
     x1, x2, x3 = u
     return [
@@ -43,15 +48,6 @@ lorenz_attractor.u0 = (-8, 7, 27)
 lorenz_attractor.terms = (('x1', 'x2'), ('x1', 'x2', 'x1 x3'), ('x3', 'x1 x2'))
 
 
-def mean_field_model(t, u, mu, w, A, l):
-    x1, x2, x3 = u
-    return [
-        mu * x1 + w * x2 + A * x1 * x3,
-        w * x1 + mu * x2 + A * x2 * x3,
-        -l * (x3 - x1 ** 2 - x2 ** 2)
-    ]
-
-
 def moore_spiegel(t, u, a1=0.8, a2=50):
     x1, x2, x3 = u
     return [
@@ -60,7 +56,7 @@ def moore_spiegel(t, u, a1=0.8, a2=50):
         -x3 / a2 + x2 * (1 - a1 * x1 * x1)
     ]
 moore_spiegel.u0 = (0.1, 0.2, 0.3)
-moore_spiegel.terms = (('x2',), ('x1', 'x3'), ('x2', 'x3', 'x1 x1 x2'))
+moore_spiegel.terms = (('x2',), ('x1', 'x3'), ('x2', 'x3', 'x1^2 x2'))
 
 
 def fabrab(t, u, a1=0.05, a2=0.1):
@@ -71,7 +67,7 @@ def fabrab(t, u, a1=0.05, a2=0.1):
         -2 * x3 * (a2 + x1 * x2)
     ]
 fabrab.u0 = (0.1, -0.1, 0.1)
-fabrab.terms = (('x1', 'x2', 'x1 x1 x2', 'x2 x3'), ('x1', 'x2', 'x1 x1 x1', 'x1 x3'), ('x3', 'x1 x2 x3'))
+fabrab.terms = (('x1', 'x2', 'x1^2 x2', 'x2 x3'), ('x1', 'x2', 'x1^3', 'x1 x3'), ('x3', 'x1 x2 x3'))
 
 
 def vallis(t, u, a1=60.175, a2=3):
