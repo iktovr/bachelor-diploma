@@ -121,7 +121,7 @@ def plot_missing_extra_terms_over_noise(coefs, feature_library, terms, noise_val
         plt.show()
 
 
-def plot_results(data, t, u0, terms, models, noise_values, arguments, *, size=(3.5, 2.5), return_coefs=False, verbose=False, **plot_data_kwargs):
+def plot_results(data, t, u0, terms, models, noise_values, arguments, *, size=(3.5, 2.5), return_coefs=False, return_data=False, verbose=False, **plot_data_kwargs):
     assert(len(models) == len(arguments))
     for args in arguments:
         assert(len(args) == 0 or len(args) == len(noise_values))
@@ -139,6 +139,9 @@ def plot_results(data, t, u0, terms, models, noise_values, arguments, *, size=(3
 
     if return_coefs:
         coefs = [[] for _ in range(len(models))]
+
+    if return_data:
+        noise_data_ret = []
     
     rng = np.random.default_rng()
     for i, noise in enumerate(noise_values):
@@ -146,6 +149,9 @@ def plot_results(data, t, u0, terms, models, noise_values, arguments, *, size=(3
         ax = fig.add_subplot(gs[0, i+1], **subplot_args)
         ax.set_title(f'Noise: {noise:.2g}')
         plot_data(noise_data, t, ax=ax, **plot_data_kwargs)
+
+        if return_data:
+            noise_data_ret.append(np.copy(noise_data))
         
         for j, ((name, model), args) in enumerate(zip(models.items(), arguments), 1):
             if i == 0:
@@ -177,8 +183,16 @@ def plot_results(data, t, u0, terms, models, noise_values, arguments, *, size=(3
     fig.tight_layout()
     plt.show()
 
+    ret = []
     if return_coefs:
-        return coefs
+        ret.append(coefs)
+    if return_data:
+        ret.append(noise_data_ret)
+
+    if len(ret) == 1:
+        return ret[0]
+    elif len(ret) == 2:
+        return ret
 
 
 def plot_sindy_scores(terms, coefs, feature_library, noise_values, *, input_feature_names='x', threshold=1e-8):
