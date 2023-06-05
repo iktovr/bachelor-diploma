@@ -1,19 +1,26 @@
 \documentclass[pdf, hyperref={unicode}, aspectratio=169]{beamer}
-\setbeameroption{hide notes}
-% \setbeameroption{show only notes}
 
 \usepackage{diploma-slides-latex-template/styles}
+\setbeamertemplate{navigation symbols}{}
+
+\usepackage{nicematrix}
+\usepackage{tikz}
+\usetikzlibrary{arrows, positioning}
+
+% \usepackage{grfext}
+
+% \AtBeginDocument{%
+%   \PrependGraphicsExtensions*{
+%     .png,.PNG,
+%     .pdf,.PDF
+%   }%
+% }
 
 \input{titlepage}
 
 \begin{document}
 
-{
-% убирает номер слайда с титульного слайда
-\setbeamertemplate{page number in head/foot}{}
 \frame{\titlepage}
-}
-
 
 \begin{frame}
 \frametitle{Актуальность темы}
@@ -34,10 +41,10 @@
 \textbf{Задачи:}
 \begin{itemize}
   \item Реализация алгоритма идентификации.
-  \item Реализация алгоритмов разреженной регрессии.
-  \item Реализация алгоритмов дифференцирования шумных данных.
-  \item Тестирование алгоритма идентификации на известных системах ОДУ.
+  \item Выбор и реализация алгоритмов разреженной регрессии.
+  \item Выбор и реализация алгоритмов дифференцирования шумных данных.
   \item Сравнение различных методов дифференцирования и регрессии.
+  \item Тестирование алгоритма идентификации на известных системах ОДУ.
 \end{itemize}
 \end{frame}
 
@@ -59,15 +66,90 @@
 \begin{frame}
 \frametitle{Алгоритм решения задачи}
 
+\small
+\vspace{-\abovedisplayskip}
+\begin{equation*}
+  \begin{gathered}
+  \begin{bNiceMatrix}[first-row]
+  x & y & z \\
+  x_1 & y_1 & z_1 \\
+  x_2 & y_2 & z_2 \\
+  \vdots & \vdots & \vdots \\
+  x_n & y_n & z_n
+  \end{bNiceMatrix}\\
+  X
+  \end{gathered}
+  \qquad
+  \begin{gathered}
+  \begin{bNiceMatrix}[first-row]
+  \dot{x} & \dot{y} & \dot{z} \\
+  \dot{x_1} & \dot{y_1} & \dot{z_1} \\
+  \dot{x_2} & \dot{y_2} & \dot{z_2} \\
+  \vdots & \vdots & \vdots \\
+  \dot{x_n} & \dot{y_n} & \dot{z_n}
+  \end{bNiceMatrix}\\
+  \dot{X}
+  \end{gathered}
+  =
+  \begin{gathered}
+  \begin{bNiceMatrix}[first-row]
+  1 & x & y & z & x^2 & xy & xz & y^2 & \cdots \\
+  \Vdots & \Vdots & \Vdots & \Vdots & \Vdots & \Vdots & \Vdots & \Vdots & \Vdots \\
+   &  &  &  &  &  &  &  &  \\
+   &  &  &  &  &  &  &  &  \\
+   &  &  &  &  &  &  &  & 
+  \end{bNiceMatrix}\\
+  \Theta(X)
+  \end{gathered}
+  \cdot
+  \begin{gathered}
+  \begin{bNiceMatrix}[first-row]
+  w_1 & w_2 & w_3 \\
+  \Vdots & \Vdots & \Vdots \\
+   &  &  \\
+   &  &  \\
+   &  & 
+  \end{bNiceMatrix}\\
+  W
+  \end{gathered}
+\end{equation*}
+
+\vspace{-1.5em}
 \begin{figure}
-\includegraphics[height=0.78\textheight]{img/sindy_scheme}
-\caption{\scriptsize\hfill Brunton et al., 2016}
+\begin{tikzpicture}
+\node(coef)[]{
+  $
+  \begin{bNiceMatrix}[first-row, first-col]
+  ~   & w_1   & w_2   & w_3   \\
+  1   & 0     & 0     & 0     \\
+  x   & -9.97 & 27.7  & 0     \\
+  y   & 9.98  & -0.89 & 0     \\
+  z   & 0     & 0     & -2.67 \\
+  x y & 0     & 0     & 0.99  \\
+  x z & 0     & -0.99 & 0     
+  \end{bNiceMatrix}
+  $
+};
+\node(equation)[right=0.7cm of coef]{
+  $
+  \begin{aligned}
+  \dot{x} &= -9.97 x + 9.98 y \\
+  \dot{y} &= 27.7 x - 0.89 y - 0.99 x z \\
+  \dot{z} &= -2.67 z + 0.99 x y
+  \end{aligned}
+  $
+};
+\node(plot)[right=0.1cm of equation]{
+  \includegraphics[width=0.27\textwidth]{img/ex1_res}
+};
+\draw [->] (coef) -- (equation);
+\end{tikzpicture}
 \end{figure}
 \end{frame}
 
 
 \begin{frame}
-\frametitle{Стек технологий}
+\frametitle{Используемые инструменты}
 
 \begin{itemize}
   \item Язык программирования Python
@@ -84,17 +166,6 @@
 Разработанное решение реализовано в формате модуля языка Python.
 \begin{figure}
 \includegraphics[height=0.8\textheight]{img/tree}
-\end{figure}
-\end{frame}
-
-
-\begin{frame}
-\frametitle{Описание программной разработки}
-
-Репозиторий с исходным кодом расположен по адресу \url{https://github.com/iktovr/bachelor-diploma}
-
-\begin{figure}
-\includegraphics[height=0.7\textheight]{img/qr-code}
 \end{figure}
 \end{frame}
 
@@ -119,89 +190,182 @@
 
 \begin{frame}
 \frametitle{Результаты разработки}
+\framesubtitle{Численное дифференцирование зашумленных данных}
 
-\framesubtitle<1-3>{Численное дифференцирование}
-\begin{onlyenv}<1-3>
 \begin{figure}
-\includegraphics<1>[width=0.49\linewidth]{img/alpha_fast_tvr}\only<1>{\hfill}
-\includegraphics<1>[width=0.49\linewidth]{img/alpha_tvr}
-\includegraphics<2>[width=\textwidth]{img/sin_dif_test}
-\includegraphics<3>[height=0.75\textheight]{img/lorenz_dif_test}
+\includegraphics<1>[width=\textwidth]{img/sin_dif_test}
+\includegraphics<2>[height=0.75\textheight]{img/lorenz_dif_test}
 \end{figure}
-\end{onlyenv}
+\end{frame}
 
-\framesubtitle<4>{Разреженная регрессия}
-\begin{onlyenv}<4>
+
+\begin{frame}
+\frametitle{Результаты разработки}
+\framesubtitle{Разреженная регрессия}
+
 \begin{figure}
 \subfloat[Алгоритм Lasso]{\includegraphics[width=0.49\linewidth]{img/lasso}}\hfill
 \subfloat[Алгоритм STLSQ]{\includegraphics[width=0.49\linewidth]{img/stlsq}}
 \end{figure}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Результаты разработки}
+\framesubtitle{Структурная идентификация.
+\only<1>{Исходная система}\only<2>{Фазовые портреты}\only<3>{Графики метрик}\only<4->{Восстановленные системы}
+}
+
+\begin{onlyenv}<1>
+\large
+\begin{columns}
+\column{0.25\textwidth}
+  \begin{align*}
+  \dot{x} &= \sigma (y - x) \\
+  \dot{y} &= x (r - z) - y \\
+  \dot{z} &= x y - b z
+  \end{align*}
+\column{0.25\textwidth}
+  \begin{align*}
+  \dot{x} &= -10 x + 10 y \\
+  \dot{y} &= 28 x - y - x z \\
+  \dot{z} &= - 8/3 z + x y
+  \end{align*}
+\column{0.5\textwidth}
+  \includegraphics[width=0.93\linewidth]{img/lorenz_big}
+\end{columns}
+\vfill
 \end{onlyenv}
 
-\framesubtitle<5-10>{Идентификация}
-\begin{onlyenv}<5-6>
+\begin{onlyenv}<2-3>
 \begin{figure}
-\includegraphics<5>[width=\textwidth]{img/lorenz_test}
-\includegraphics<6>[height=0.8\textheight]{img/lorenz_scores}
+\includegraphics<2>[height=0.8\textheight]{img/lorenz_test}
+\includegraphics<3>[height=0.8\textheight]{img/lorenz_scores}
 \end{figure}
+\end{onlyenv}
+
+\begin{onlyenv}<4>
+Уровень шума: $0$
+\vfill
+\begin{columns}
+\column{0.333\textwidth}
+  \includegraphics[height=\linewidth]{img/ex1_orig}
+\column{0.333\textwidth}
+  \begin{align*}
+  \dot{x} &= -9.97 x + 9.98 y \\
+  \dot{y} &= 27.7 x - 0.89 y - 0.99 x z \\
+  \dot{z} &= -2.67 z + 0.99 x y
+  \end{align*}
+\column{0.333\textwidth}
+  \includegraphics[height=\linewidth]{img/ex1_res}
+\end{columns}
+\vfill
+\begin{center}
+  \begin{tabular}{l}
+  Потерянных слагаемых: $0$\\
+  Лишних слагаемых: $0$\\
+  IoU: $1$\\
+  \end{tabular}
+\end{center}
+\end{onlyenv}
+
+\begin{onlyenv}<5>
+Уровень шума: $0.01$
+\vfill
+\begin{columns}
+\column{0.333\textwidth}
+  \includegraphics[height=\linewidth]{img/ex2_orig}
+\column{0.333\textwidth}
+  \begin{align*}
+  \dot{x} &= -9.95 x + 9.96 y \\
+  \dot{y} &= 27.5 x - 0.87 y - 0.99 x z \\
+  \dot{z} &= -2.66 z + 0.99 x y
+  \end{align*}
+\column{0.333\textwidth}
+  \includegraphics[height=\linewidth]{img/ex2_res}
+\end{columns}
+\vfill
+\begin{center}
+  \begin{tabular}{l}
+  Потерянных слагаемых: $0$\\
+  Лишних слагаемых: $0$\\
+  IoU: $1$\\
+  \end{tabular}
+\end{center}
+\end{onlyenv}
+
+\begin{onlyenv}<6>
+Уровень шума: $0.1$
+\vfill
+\begin{columns}
+\column{0.333\textwidth}
+  \includegraphics[height=\linewidth]{img/ex3_orig}
+\column{0.333\textwidth}
+  \begin{align*}
+  \dot{x} &= -9.93 x + 9.95 y \\
+  \dot{y} &= 27.2 x - 0.8 y - 0.98 x z \\
+  \dot{z} &= -2.65 z + 0.99 x y
+  \end{align*}
+\column{0.333\textwidth}
+  \includegraphics[height=\linewidth]{img/ex3_res}
+\end{columns}
+\vfill
+\begin{center}
+  \begin{tabular}{l}
+  Потерянных слагаемых: $0$\\
+  Лишних слагаемых: $0$\\
+  IoU: $1$\\
+  \end{tabular}
+\end{center}
 \end{onlyenv}
 
 \begin{onlyenv}<7>
-\small
-\begin{equation*}
-\begin{aligned}
-\dot{x} &= -10 x + 10 y                  &\dot{x} &= -9.974 x + 9.979 y \\
-\dot{y} &= 27.79 x - 0.917 y - 0.993 x z \qquad &\dot{y} &= 27.78 x - 0.919 y - 0.993 x z \\
-\dot{z} &= -2.67 z + 0.999 x y           &\dot{z} &= -2.667 z + 0.999 x y \\
-\\
-\dot{x} &= -9.97 x + 9.978 y             &\dot{x} &= -9.91 x + 9.928 y \\
-\dot{y} &= 27.63 x - 0.861 y - 0.989 x z &\dot{y} &= 27.34 x - 0.833 y - 0.982 x z \\
-\dot{z} &= -2.668 z + 0.999 x y          &\dot{z} &= -2.647 z + 0.989 x y \\
-\\
-\dot{x} &= -9.605 x + 9.683 y        &\dot{x} &= 2.741 - 0.438 x + 4.448 y \\
-\dot{y} &= 25.55 x - 0.939 x z       &\dot{y} &= 23.03 x + 0.327 y - 0.877 x z \\
-\dot{z} &= 1.2 - 2.658 z + 0.977 x y &\dot{z} &= -2.541 z + 0.955 x y
-\end{aligned}
-\end{equation*}
-\end{onlyenv}
-
-\begin{onlyenv}<8-9>
-\begin{figure}
-\includegraphics<8>[width=0.99\textwidth]{img/moore_spiegel_test}
-\includegraphics<9>[width=\textwidth]{img/moore_spiegel_scores}
-\end{figure}
-\end{onlyenv}
-
-\begin{onlyenv}<10>
-\small
-\begin{equation*}
-\begin{aligned}
-\dot{x} &= 0.977 y                         &\dot{x} &= 0.977 y \\
-\dot{y} &= -0.186 x + 0.975 z              &\dot{y} &= -0.186 x + 0.976 z \\
-\dot{z} &= 0.992 y - 0.021 z - 0.798 x^2 y \qquad &\dot{z} &= 0.993 y - 0.021 z - 0.799 x^2 y \\
-\\
-\dot{x} &= 0.984 y                         &\dot{x} &= 0.982 y \\
-\dot{y} &= -0.185 x + 0.978 z              &\dot{y} &= -0.187 x + 0.979 z \\
-\dot{z} &= 1.006 y - 0.021 z - 0.802 x^2 y &\dot{z} &= 1.046 y - 0.81 x^2 y \\
-\\
-\dot{x} &= 0.963 y             &\dot{x} &= 0.905 y \\
-\dot{y} &= 0.948 z             &\dot{y} &= 0.917 z \\
-\dot{z} &= 0.9 y - 0.729 x^2 y &\dot{z} &= 0.757 y - 0.642 x^2 y - 0.167 y z^2
-\end{aligned}
-\end{equation*}
+Уровень шума: $1$
+\vfill
+\begin{columns}
+\column{0.333\textwidth}
+  \includegraphics[height=\linewidth]{img/ex4_orig}
+\column{0.333\textwidth}
+  \begin{align*}
+  \dot{x} &= -8.75 x + 8.89 y \\
+  \dot{y} &= 21 x + 0.7 y - 0.82 x z \\
+  \dot{z} &= -1.65 - 2.43 z + 0.94 x y
+  \end{align*}
+\column{0.333\textwidth}
+  \includegraphics[height=\linewidth]{img/ex4_res}
+\end{columns}
+\vfill
+\begin{center}
+  \begin{tabular}{l}
+  Потерянных слагаемых: $0$\\
+  Лишних слагаемых: $1$\\
+  IoU: $0.88$\\
+  \end{tabular}
+\end{center}
 \end{onlyenv}
 \end{frame}
-
 
 \begin{frame}
 \frametitle{Оценка результата}
 
 \begin{itemize}
 \item Основной результат заключается в том, что идентификация систем ОДУ по шумным данным вполне осуществима.
-\item Однако, для этого необходимо иметь подходящий набор функций предполагаемых слагаемых.
-\item Для эффективной борьбы с шумом нужно также оценивать его величину.
-\item Также были разработаны рекомендации по использованию как отдельных алгоритмов, так и всего алгоритма в целом.
+\begin{itemize}
+\item Для этого необходимо иметь подходящий набор функций предполагаемых слагаемых.
+\item Для эффективной борьбы с шумом нужна оценка его величины.
+\end{itemize}
+\item Разработаны рекомендации по использованию как отдельных методов, так и всего алгоритма в целом.
 \end{itemize}
 \end{frame}
 
+
+\begin{frame}
+\frametitle{Описание программной разработки}
+
+Репозиторий с исходным кодом расположен по адресу \url{https://github.com/iktovr/bachelor-diploma}
+
+\begin{figure}
+\includegraphics[height=0.7\textheight]{img/qr-code}
+\end{figure}
+\end{frame}
 \end{document}
